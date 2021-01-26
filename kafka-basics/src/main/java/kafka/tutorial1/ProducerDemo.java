@@ -13,23 +13,24 @@ public class ProducerDemo {
 
         String bootstrapServers = "127.0.0.1:9092";
 
-        // create Producer properties
+        // create Producer properties. Se interpreta de las 2 últimas, que vamos a enviar Strings en las key y value
         Properties properties = new Properties();
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
-        // create the producer
+        // create the producer. Los argumentos de KafkaProducer indican la key y la value de los mensajes a mandar.
+        //En este ejemplo son ambos String pero podrían ser cualquier cosa.
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(properties);
 
-        // create a producer record
+        // create a producer record. Tienes que indicar el Topic hacia el cuál quieres mandar data's
         ProducerRecord<String, String> record =
-                new ProducerRecord<String, String>("first_topic", "hello world");
+                new ProducerRecord<String, String>("AlfredoJava", "hello world");
 
         // send data - asynchronous
         producer.send(record);
 
-        // flush data
+        // flush data. Forzar todos los data's a ser producidos
         producer.flush();
         // flush and close producer
         producer.close();

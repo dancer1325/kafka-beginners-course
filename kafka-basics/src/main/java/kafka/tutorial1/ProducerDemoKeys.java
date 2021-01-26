@@ -29,7 +29,7 @@ public class ProducerDemoKeys {
         for (int i=0; i<10; i++ ) {
             // create a producer record
 
-            String topic = "first_topic";
+            String topic = "AlfredoJava";
             String value = "hello world " + Integer.toString(i);
             String key = "id_" + Integer.toString(i);
 
@@ -64,7 +64,7 @@ public class ProducerDemoKeys {
                         logger.error("Error while producing", e);
                     }
                 }
-            }).get(); // block the .send() to make it synchronous - don't do this in production!
+            });//.get(); // block the .send() to make it synchronous - don't do this in production! Realiza ésto porque está loguea cada key y para que se vea más claro
         }
 
         // flush data

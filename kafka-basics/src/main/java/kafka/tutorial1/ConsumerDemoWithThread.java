@@ -17,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 public class ConsumerDemoWithThread {
 
     public static void main(String[] args) {
+        //Since Runnable constructors can't be indicated from static Context --> It's created another outside
         new ConsumerDemoWithThread().run();
     }
 
@@ -52,6 +53,7 @@ public class ConsumerDemoWithThread {
             logger.info("Caught shutdown hook");
             ((ConsumerRunnable) myConsumerRunnable).shutdown();
             try {
+                //No cierra el hilo hasta que la application is over
                 latch.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -77,9 +79,9 @@ public class ConsumerDemoWithThread {
         private Logger logger = LoggerFactory.getLogger(ConsumerRunnable.class.getName());
 
         public ConsumerRunnable(String bootstrapServers,
-                                String groupId,
-                                String topic,
-                                CountDownLatch latch) {
+                String groupId,
+                String topic,
+                CountDownLatch latch) {
             this.latch = latch;
 
             // create consumer configs
@@ -113,7 +115,7 @@ public class ConsumerDemoWithThread {
                 logger.info("Received shutdown signal!");
             } finally {
                 consumer.close();
-                // tell our main code we're done with the consumer
+                // tell our main code we're done with the consumer. Es muy importante cerrar el consumer
                 latch.countDown();
             }
         }

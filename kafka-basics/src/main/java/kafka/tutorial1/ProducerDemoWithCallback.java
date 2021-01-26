@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
+
 public class ProducerDemoWithCallback {
 
     public static void main(String[] args) {
@@ -24,13 +25,14 @@ public class ProducerDemoWithCallback {
         // create the producer
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(properties);
 
-
+        //Probar a enviar varios data's
         for (int i=0; i<10; i++ ) {
             // create a producer record
             ProducerRecord<String, String> record =
-                    new ProducerRecord<String, String>("first_topic", "hello world " + Integer.toString(i));
+                    new ProducerRecord<String, String>("AlfredoJava", "hello world " + Integer.toString(i));
 
-            // send data - asynchronous
+            // send data - asynchronous. Al rellenarse con el tabulador el 2º argumento con new Callback() automáticamente
+            //se crea el método onCompletion.
             producer.send(record, new Callback() {
                 public void onCompletion(RecordMetadata recordMetadata, Exception e) {
                     // executes every time a record is successfully sent or an exception is thrown
