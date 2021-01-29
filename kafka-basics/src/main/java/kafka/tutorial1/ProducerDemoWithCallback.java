@@ -33,6 +33,8 @@ public class ProducerDemoWithCallback {
 
             // send data - asynchronous. Al rellenarse con el tabulador el 2º argumento con new Callback() automáticamente
             //se crea el método onCompletion.
+            //We are indicating the name of the topic in which to publish the information, but firstly it's necessary
+            //to create the topic manually
             producer.send(record, new Callback() {
                 public void onCompletion(RecordMetadata recordMetadata, Exception e) {
                     // executes every time a record is successfully sent or an exception is thrown
