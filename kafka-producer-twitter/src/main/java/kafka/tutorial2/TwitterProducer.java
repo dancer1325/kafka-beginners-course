@@ -1,5 +1,13 @@
 package kafka.tutorial2;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Client;
@@ -10,33 +18,49 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
-import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 public class TwitterProducer {
 
     Logger logger = LoggerFactory.getLogger(TwitterProducer.class.getName());
 
     // use your own credentials - don't share them with anyone
-    String consumerKey = "";
-    String consumerSecret = "";
-    String token = "";
-    String secret = "";
+    private static Properties properties;
+    private static String consumerKey;
+    private static String consumerSecret;
+    private static String token;
+    private static String secret;
 
-    List<String> terms = Lists.newArrayList("bitcoin", "usa", "politics", "sport", "soccer");
+//    List<String> terms = Lists.newArrayList("bitcoin", "usa", "politics", "sport", "soccer");
+    List<String> terms = Lists.newArrayList("bitcoin");
 
 
-    public TwitterProducer(){}
+    public TwitterProducer() throws IOException {
+        //How to indicate the file's path
+        //1º Relative path (It doesn't work, why?)
+        String rootRelativePath = "src/main/resources/";
+        //2º By the thread
+        String rootThreadPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
 
-    public static void main(String[] args) {
+        String secretPropertiesPath = rootThreadPath + "application-secret.properties";
+        FileInputStream fileInputStream = new FileInputStream(secretPropertiesPath);
+        properties = new Properties();
+        properties.load(fileInputStream);
+
+        consumerKey = properties.getProperty("consumerkey");
+        consumerSecret = properties.getProperty("consumerSecret");
+        token = properties.getProperty("token");
+        secret = properties.getProperty("secret");
+    }
+
+    public static void main(String[] args) throws IOException {
         new TwitterProducer().run();
     }
 
@@ -55,7 +79,7 @@ public class TwitterProducer {
         // create a kafka producer
         KafkaProducer<String, String> producer = createKafkaProducer();
 
-        // add a shutdown hook
+        // add a shutdown hook. It's launched when the thread is stopped
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("stopping application...");
             logger.info("shutting down client from twitter...");
@@ -77,6 +101,10 @@ public class TwitterProducer {
             }
             if (msg != null){
                 logger.info(msg);
+                //We add a callBack to execute every time a record is successfully sent or an exception is thrown
+                //We are indicating the name of the topic in which to publish the information, but firstly it's necessary
+                //to create the topic manually
+                //The key isn't necessary as it has been done in Kafka-basic project
                 producer.send(new ProducerRecord<>("twitter_tweets", null, msg), new Callback() {
                     @Override
                     public void onCompletion(RecordMetadata recordMetadata, Exception e) {
@@ -115,21 +143,22 @@ public class TwitterProducer {
     public KafkaProducer<String, String> createKafkaProducer(){
         String bootstrapServers = "127.0.0.1:9092";
 
-        // create Producer properties
+        // create the basic Producer properties
+        //With the next properties will be enough to produce in Kafka
         Properties properties = new Properties();
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
         // create safe Producer
-        properties.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
-        properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
-        properties.setProperty(ProducerConfig.RETRIES_CONFIG, Integer.toString(Integer.MAX_VALUE));
+        properties.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true"); //To create Idempotence Producers
+        properties.setProperty(ProducerConfig.ACKS_CONFIG, "all"); //To indicate acknowledgment
+        properties.setProperty(ProducerConfig.RETRIES_CONFIG, Integer.toString(Integer.MAX_VALUE)); //To indicate the retires
         properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "5"); // kafka 2.0 >= 1.1 so we can keep this as 5. Use 1 otherwise.
 
         // high throughput producer (at the expense of a bit of latency and CPU usage)
-        properties.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
-        properties.setProperty(ProducerConfig.LINGER_MS_CONFIG, "20");
+        properties.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy"); //To indicate the compression type
+        properties.setProperty(ProducerConfig.LINGER_MS_CONFIG, "20"); //To introduce delay in the producer
         properties.setProperty(ProducerConfig.BATCH_SIZE_CONFIG, Integer.toString(32*1024)); // 32 KB batch size
 
         // create the producer
