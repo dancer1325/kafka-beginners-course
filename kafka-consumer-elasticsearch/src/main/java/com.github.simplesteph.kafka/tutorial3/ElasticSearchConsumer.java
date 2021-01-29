@@ -1,74 +1,26 @@
 package com.github.simplesteph.kafka.tutorial3;
 
-import com.google.gson.JsonParser;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.mapper.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Properties;
 
-public class ElasticSearchConsumer {
+import com.google.gson.JsonParser;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    public static RestHighLevelClient createClient(){
-
-        //////////////////////////
-        /////////// IF YOU USE LOCAL ELASTICSEARCH
-        //////////////////////////
-
-        //  String hostname = "localhost";
-        //  RestClientBuilder builder = RestClient.builder(new HttpHost(hostname,9200,"http"));
-
-
-        //////////////////////////
-        /////////// IF YOU USE BONSAI / HOSTED ELASTICSEARCH
-        //////////////////////////
-
-        // replace with your own credentials
-        String hostname = ""; // localhost or bonsai url
-        String username = ""; // needed only for bonsai
-        String password = ""; // needed only for bonsai
-
-        // credentials provider help supply username and password
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(username, password));
-
-        RestClientBuilder builder = RestClient.builder(
-                new HttpHost(hostname, 443, "https"))
-                .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                    @Override
-                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                    }
-                });
-
-        RestHighLevelClient client = new RestHighLevelClient(builder);
-        return client;
-    }
+public class ElasticSearchConsumer extends ElasticSearchClient{
 
     public static KafkaConsumer<String, String> createConsumer(String topic){
 
@@ -130,11 +82,12 @@ public class ElasticSearchConsumer {
 
                     // where we insert data into ElasticSearch
 
+                    //IndexRequest. When it already exists to index documents there.
                     /**
                      * Uncomment this code if you are using elastic search version < 7.0
                     IndexRequest indexRequest = new IndexRequest(
-                       "twitter",
-                       "tweets",
+                       "twitter", //Index
+                       "tweets", //Type
                        id // this is to make our consumer idempotent
                     ).source(record.value(), XContentType.JSON);
                     */
